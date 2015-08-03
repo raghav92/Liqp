@@ -3,7 +3,7 @@ package liqp.filters;
 import liqp.LValue;
 
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
 /**
@@ -18,42 +18,56 @@ import java.util.Map;
 public abstract class Filter extends LValue {
 
     /**
+     * A list holding standard filters.
+     */
+	private static final Filter []standardFiltersList = {
+        new Append(),
+        new Capitalize(),
+        new Date(),
+        new Divided_By(),
+        new Downcase(),
+        new Escape(),
+        new Escape_Once(),
+        new First(),
+        new H(),
+        new Join(),
+        new Last(),
+        new liqp.filters.Map(),
+        new Minus(),
+        new Modulo(),
+        new Plus(),
+        new Prepend(),
+        new Remove(),
+        new Remove_First(),
+        new Replace(),
+        new Replace_First(),
+        new Size(),
+        new Sort(),
+        new Split(),
+        new Strip_HTML(),
+        new Strip_Newlines(),
+        new Times(),
+        new Truncate(),
+        new Truncatewords(),
+        new Upcase()
+	};
+
+    /**
      * A map holding all filters.
      */
-    private static final Map<String, Filter> FILTERS = new HashMap<String, Filter>();
-
-    static {
-        // Initialize all standard filters.
-        registerFilter(new Append());
-        registerFilter(new Capitalize());
-        registerFilter(new Date());
-        registerFilter(new Divided_By());
-        registerFilter(new Downcase());
-        registerFilter(new Escape());
-        registerFilter(new Escape_Once());
-        registerFilter(new First());
-        registerFilter(new H());
-        registerFilter(new Join());
-        registerFilter(new Last());
-        registerFilter(new liqp.filters.Map());
-        registerFilter(new Minus());
-        registerFilter(new Modulo());
-        registerFilter(new Plus());
-        registerFilter(new Prepend());
-        registerFilter(new Remove());
-        registerFilter(new Remove_First());
-        registerFilter(new Replace());
-        registerFilter(new Replace_First());
-        registerFilter(new Size());
-        registerFilter(new Sort());
-        registerFilter(new Split());
-        registerFilter(new Strip_HTML());
-        registerFilter(new Strip_Newlines());
-        registerFilter(new Times());
-        registerFilter(new Truncate());
-        registerFilter(new Truncatewords());
-        registerFilter(new Upcase());
-    }
+    private static final ThreadLocal<Map<String, Filter>> FILTERS = new ThreadLocal<Map<String, Filter>>() {
+    	/* (non-Javadoc)
+    	 * @see java.lang.ThreadLocal#initialValue()
+    	 */
+    	protected java.util.Map<String,Filter> initialValue() {
+    		Map<String, Filter> standardFilters = new ConcurrentHashMap<String, Filter>();
+    		for(Filter filter: standardFiltersList) {
+    	        // Initialize all standard filters.
+    			standardFilters.put(filter.name, filter);
+    		}
+    		return standardFilters;
+    	}
+    };
 
     /**
      * The name of the filter.
@@ -138,7 +152,7 @@ public abstract class Filter extends LValue {
      */
     public static Filter getFilter(String name) {
 
-        Filter filter = FILTERS.get(name);
+        Filter filter = FILTERS.get().get(name);
 
         if (filter == null) {
             throw new RuntimeException("unknown filter: " + name);
@@ -154,6 +168,6 @@ public abstract class Filter extends LValue {
      *         the filter to be registered.
      */
     public static void registerFilter(Filter filter) {
-        FILTERS.put(filter.name, filter);
+        FILTERS.get().put(filter.name, filter);
     }
 }

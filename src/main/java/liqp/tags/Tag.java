@@ -20,26 +20,34 @@ public abstract class Tag extends LValue {
             return "";
         }
     }
+    
+    private static final Tag[] STANDARD_TAGS = new Tag[]{
+        new Assign(),
+        new Case(),
+        new Capture(),
+        new Comment(),
+        new Cycle(),
+        new For(),
+        new If(),
+        new Include(),
+        new Raw(),
+        new Tablerow(),
+        new Unless()
+    };
 
     /**
      * A map holding all tags.
      */
-    private static final Map<String, Tag> TAGS = new HashMap<String, Tag>();
-
-    static {
-        // Register all standard tags.
-        registerTag(new Assign());
-        registerTag(new Case());
-        registerTag(new Capture());
-        registerTag(new Comment());
-        registerTag(new Cycle());
-        registerTag(new For());
-        registerTag(new If());
-        registerTag(new Include());
-        registerTag(new Raw());
-        registerTag(new Tablerow());
-        registerTag(new Unless());
-    }
+    private static final ThreadLocal<Map<String, Tag>> TAGS = new ThreadLocal<Map<String, Tag>>() {
+        @Override
+        protected Map<String, Tag> initialValue() {
+            Map<String, Tag> map = new HashMap<String, Tag>();
+            for(Tag t: STANDARD_TAGS) {
+                map.put(t.name, t);
+            }
+            return map;
+        }
+    };
 
     /**
      * The name of this tag.
@@ -74,7 +82,7 @@ public abstract class Tag extends LValue {
      */
     public static Tag getTag(String name) {
 
-        Tag tag = TAGS.get(name);
+        Tag tag = TAGS.get().get(name);
 
         if (tag == null) {
             throw new RuntimeException("unknown tag: " + name);
@@ -90,7 +98,7 @@ public abstract class Tag extends LValue {
      *         the tag to be registered.
      */
     public static void registerTag(Tag tag) {
-        TAGS.put(tag.name, tag);
+        TAGS.get().put(tag.name, tag);
     }
 
     /**
